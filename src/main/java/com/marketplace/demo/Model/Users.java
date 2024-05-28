@@ -33,6 +33,9 @@ public class Users implements UserDetails {
     @GeneratedValue
     private Long id;
 
+    public Users(Users users) {
+    }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
