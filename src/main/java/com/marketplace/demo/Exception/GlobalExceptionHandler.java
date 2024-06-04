@@ -4,6 +4,7 @@ import com.marketplace.demo.Controller.error.BadRequestAlertException;
 import com.marketplace.demo.Controller.error.ForbiddenAlertException;
 import lombok.Builder;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,17 +23,29 @@ public class GlobalExceptionHandler  implements ProblemHandling {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({ BadRequestAlertException.class })
     public Error handleAll(AbstractThrowableProblem problem) {
-        return Error.builder()
-        .code(Objects.requireNonNull(problem.getStatus()).getStatusCode()).error(problem.getTitle()).message(problem.getMessage()).build();
+        Error error = Error.builder()
+                .code(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(problem.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error).getBody();
+//        return Error.builder()
+//        .code(Objects.requireNonNull(problem.getStatus()).getStatusCode()).error(problem.getTitle()).message(problem.getMessage()).build();
     }
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler({ ForbiddenAlertException.class })
     public Error handleForbidden (AbstractThrowableProblem problem) {
-        return Error.builder()
-                .code(Objects.requireNonNull(problem.getStatus()).getStatusCode())
-                .error(problem.getTitle())
+        Error error = Error.builder()
+                .code(HttpStatus.FORBIDDEN.value())
+                .error(HttpStatus.FORBIDDEN.getReasonPhrase())
                 .message(problem.getMessage())
                 .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error).getBody();
+//        return Error.builder()
+//                .code(Objects.requireNonNull(problem.getStatus()).getStatusCode())
+//                .error(problem.getTitle())
+//                .message(problem.getMessage())
+//                .build();
     }
 }
