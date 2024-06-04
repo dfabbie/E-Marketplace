@@ -36,18 +36,18 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-//    @Bean
-//    public UserDetailsService userDetailsService(UserRepo userRepo) {
-//        return new UserService(userRepo, passwordEncoder());
-//    }
-
     @Bean
-    public InMemoryUserDetailsManager userDetailsService() {
-        UserDetails user = User.withUsername("dfabbie")
-                .password(passwordEncoder().encode("secret"))
-                .build();
-        return new InMemoryUserDetailsManager(user);
+    public UserDetailsService userDetailsService(UserRepo userRepo) {
+        return new UserService(userRepo, passwordEncoder());
     }
+
+//    @Bean
+//    public InMemoryUserDetailsManager userDetailsService() {
+//        UserDetails user = User.withUsername("dfabbie")
+//                .password(passwordEncoder().encode("secret"))
+//                .build();
+//        return new InMemoryUserDetailsManager(user);
+//    }
 
 
     @Bean
@@ -71,7 +71,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider(UserRepo userRepo) {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userDetailsService());
+        authenticationProvider.setUserDetailsService(userDetailsService(userRepo));
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
