@@ -2,10 +2,8 @@ package com.marketplace.demo.Config;
 
 import com.marketplace.demo.Repository.UserRepo;
 import com.marketplace.demo.Service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -20,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 
 @Configuration
 @EnableWebSecurity
@@ -36,7 +33,7 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService(UserRepo userRepo) {
-        return new UserService(userRepo);
+        return new UserService(userRepo, passwordEncoder());
     }
 
     @Bean
@@ -45,7 +42,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // Apply CORS
                 .csrf(csrf -> csrf.disable()) // Disable CSRF protection
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/addUser", "/auth/login")
+                        .requestMatchers("/auth/addUser", "/auth/login", "/auth/**")
                         .permitAll()// Permit all requests to certain URLs
                         .requestMatchers("/api/authenticate").permitAll()
                         .anyRequest().authenticated()) // Require authentication for all other requests

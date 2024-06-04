@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/auth")
 // @RequestMapping(path = "/api/v0")
 public class UserController {
     private final UserService userService;
@@ -27,9 +27,9 @@ public class UserController {
         return userService.getUserById(id);
     }
 
-    @PostMapping
+    @PostMapping(value = "/addUser", produces ="application/json")
     public Users save(@RequestBody Users users) {
-        return userService.save(users);
+        return userService.addUser(users);
     }
 
 

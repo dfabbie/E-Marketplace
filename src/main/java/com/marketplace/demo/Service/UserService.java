@@ -17,8 +17,9 @@ public class UserService implements UserDetailsService {
 
     private PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepo userRepo) {
+    public UserService(UserRepo userRepo, PasswordEncoder passwordEncoder) {
         this.userRepo = userRepo;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -34,9 +35,9 @@ public class UserService implements UserDetailsService {
         return userRepo.save(users);
     }
 
-    public void addUser(Users users) {
+    public Users addUser(Users users) {
         users.setPassword(passwordEncoder.encode(users.getPassword()));
-        userRepo.save(users);
+        return userRepo.save(users);
     }
 
     @Override
