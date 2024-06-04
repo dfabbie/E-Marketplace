@@ -17,7 +17,7 @@ public class ForbiddenAlertException extends AbstractThrowableProblem{
     private final String errorKey;
 
     public ForbiddenAlertException(String defaultMessage, String entityName, String errorKey) {
-        this(URI.create("http://errormarketplace.sn"), defaultMessage, entityName, errorKey);
+        this(URI.create("http://errormarket.sn"), defaultMessage, entityName, errorKey);
     }
 
     public ForbiddenAlertException(URI type, String defaultMessage, String entityName, String errorKey) {

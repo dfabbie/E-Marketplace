@@ -1,20 +1,25 @@
 package com.marketplace.demo.Config;
 
+import com.marketplace.demo.Model.Users;
 import com.marketplace.demo.Repository.UserRepo;
 import com.marketplace.demo.Service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -31,10 +36,19 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
+//    @Bean
+//    public UserDetailsService userDetailsService(UserRepo userRepo) {
+//        return new UserService(userRepo, passwordEncoder());
+//    }
+
     @Bean
-    public UserDetailsService userDetailsService(UserRepo userRepo) {
-        return new UserService(userRepo, passwordEncoder());
+    public InMemoryUserDetailsManager userDetailsService() {
+        UserDetails user = User.withUsername("dfabbie")
+                .password(passwordEncoder().encode("secret"))
+                .build();
+        return new InMemoryUserDetailsManager(user);
     }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, UserRepo userRepo) throws Exception {
@@ -47,7 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/authenticate").permitAll()
                         .anyRequest().authenticated()) // Require authentication for all other requests
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Set session management to stateless
-                .authenticationProvider(authenticationProvider( userRepo)) // Register the authentication provider
+                .authenticationProvider(authenticationProvider(userRepo)) // Register the authentication provider
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add the JWT filter before processing the request
                 .build();
     }
@@ -57,7 +71,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider(UserRepo userRepo) {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userDetailsService(userRepo));
+        authenticationProvider.setUserDetailsService(userDetailsService());
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
