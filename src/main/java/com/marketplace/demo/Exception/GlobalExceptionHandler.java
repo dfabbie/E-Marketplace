@@ -14,7 +14,7 @@ import org.zalando.problem.spring.web.advice.ProblemHandling;
 import java.util.Objects;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler  implements ProblemHandling {
+public class GlobalExceptionHandler {
 
     @Builder
     record Error(Integer code, String error ,String message){
@@ -25,10 +25,10 @@ public class GlobalExceptionHandler  implements ProblemHandling {
     public Error handleAll(AbstractThrowableProblem problem) {
         Error error = Error.builder()
                 .code(HttpStatus.BAD_REQUEST.value())
-                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .error(problem.getDetail())
                 .message(problem.getMessage())
                 .build();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error).getBody();
+        return error;
 //        return Error.builder()
 //        .code(Objects.requireNonNull(problem.getStatus()).getStatusCode()).error(problem.getTitle()).message(problem.getMessage()).build();
     }

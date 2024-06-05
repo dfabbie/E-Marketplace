@@ -41,14 +41,6 @@ public class SecurityConfig {
         return new UserService(userRepo, passwordEncoder());
     }
 
-//    @Bean
-//    public InMemoryUserDetailsManager userDetailsService() {
-//        UserDetails user = User.withUsername("dfabbie")
-//                .password(passwordEncoder().encode("secret"))
-//                .build();
-//        return new InMemoryUserDetailsManager(user);
-//    }
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, UserRepo userRepo) throws Exception {
@@ -56,6 +48,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // Apply CORS
                 .csrf(csrf -> csrf.disable()) // Disable CSRF protection
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers( "**").permitAll()
                         .requestMatchers("/auth/addUser", "/auth/login", "/auth/**")
                         .permitAll()// Permit all requests to certain URLs
                         .requestMatchers("/api/authenticate").permitAll()

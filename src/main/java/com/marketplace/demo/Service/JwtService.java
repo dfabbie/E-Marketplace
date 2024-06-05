@@ -6,7 +6,11 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +22,8 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
     // Secret Key for signing the JWT. It should be kept private.
     @Value("${security.jwt.secret-key}")
     private String secretKey;
@@ -25,9 +31,14 @@ public class JwtService {
     @Value("${security.jwt.expiration-time}")
     private long jwtExpiration;
 
+    public JwtService(AuthenticationManager authenticationManager, UserDetailsService userDetailsService) {
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+    }
 
     // Generates a JWT token for the given userName.
-    public String generateToken(String userName) {
+    //Complete the generateToken function
+    public String generateToken(Authentication authentication) {
         // Prepare claims for the token
         Map<String, Object> claims = new HashMap<>();
 
@@ -35,7 +46,7 @@ public class JwtService {
         // Token valid for 3 minutes
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(userName)
+                .setSubject(authentication.getPrincipal().toString())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
@@ -58,6 +69,9 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractPassword(String token) {
+        return extractClaim(token, claims -> claims.get("password", String.class));
+    }
 
     // Extracts the expiration date from the JWT token.
     //@return The expiration date of the token.
@@ -86,6 +100,7 @@ public class JwtService {
     }
 
 
+
     //Checks if the JWT token is expired.
     //return-> True if the token is expired, false otherwise.
     public Boolean isTokenExpired(String token) {
@@ -99,8 +114,9 @@ public class JwtService {
     public Boolean validateToken(String token, UserDetails userDetails) {
         // Extract username from token and check if it matches UserDetails' username
         final String userName = extractUserName(token);
+        final String password = extractPassword(token);
         // Also check if the token is expired
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return (userName.equals(userDetails.getUsername()) && password.equals(userDetails.getPassword()) && !isTokenExpired(token));
     }
 
 }
