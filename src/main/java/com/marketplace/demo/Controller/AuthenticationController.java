@@ -43,7 +43,12 @@ public class AuthenticationController {
 
     @PostMapping("/authenticate")
     public String generateToken(@RequestBody LoginVm logIn){
+        if (!userRepo.findByUsername(logIn.getUsername()).isPresent()){
+            throw new BadRequestAlertException("Invalid Username", "User", "Error.Username.Invalid");
+        }
+
         UserDetails userDetails = userService.loadUserByUsername(logIn.getUsername());
+
         if (!passwordEncoder.matches(logIn.getPassword(), userDetails.getPassword())) {
             throw new BadRequestAlertException("Invalid Password", "User", "Error.Password.Invalid");
         }
@@ -51,11 +56,6 @@ public class AuthenticationController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(logIn.getUsername(), logIn.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
-
-        if (!userRepo.findByUsername(logIn.getUsername()).isPresent()){
-            throw new BadRequestAlertException("Invalid Username", "User", "Error.Username.Invalid");
-        }
 
         return jwtService.generateToken(authentication);
     }
