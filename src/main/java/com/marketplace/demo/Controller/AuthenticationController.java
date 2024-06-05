@@ -52,9 +52,6 @@ public class AuthenticationController {
                 new UsernamePasswordAuthenticationToken(logIn.getUsername(), logIn.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(logIn.getUsername(), logIn.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         if (!userRepo.findByUsername(logIn.getUsername()).isPresent()){
             throw new BadRequestAlertException("Invalid Username", "User", "Error.Username.Invalid");
