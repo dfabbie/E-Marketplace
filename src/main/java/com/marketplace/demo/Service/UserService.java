@@ -1,25 +1,39 @@
 package com.marketplace.demo.Service;
 
+import com.marketplace.demo.Controller.AuthenticationController;
+import com.marketplace.demo.Controller.error.BadRequestAlertException;
 import com.marketplace.demo.Model.Users;
 import com.marketplace.demo.Repository.UserRepo;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import com.marketplace.demo.Security.DomainUserDetailsService;
+import com.marketplace.demo.Security.Jwt.JwtService;
+import com.marketplace.demo.Service.dto.GlobalRecordVm;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService {
+
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final DomainUserDetailsService domainUserDetailsService;
+
 
     private final UserRepo userRepo;
 
-    private PasswordEncoder passwordEncoder;
+    //private PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepo userRepo, PasswordEncoder passwordEncoder) {
+    public UserService(AuthenticationManager authenticationManager, JwtService jwtService, DomainUserDetailsService domainUserDetailsService, UserRepo userRepo) {
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
+        this.domainUserDetailsService = domainUserDetailsService;
         this.userRepo = userRepo;
-        this.passwordEncoder = passwordEncoder;
+        //this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -36,14 +50,23 @@ public class UserService implements UserDetailsService {
     }
 
     public Users addUser(Users users) {
-        users.setPassword(passwordEncoder.encode(users.getPassword()));
+        //users.setPassword(passwordEncoder.encode(users.getPassword()));
         return userRepo.save(users);
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public Optional<Users> loadUserByUsername(String username) throws UsernameNotFoundException {
         Optional<Users> user = userRepo.findByUsername(username);
-        return user.map(Users::new)
-                .orElseThrow(() -> new UsernameNotFoundException("UserName not found: " + username));
+        return user;
+    }
+
+    public GlobalRecordVm.AuthenticationVm authenticate(GlobalRecordVm.LoginVm authenticationRequest) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
+            String token = jwtService.generateToken(domainUserDetailsService.loadUserByUsername(authenticationRequest.getUsername()));
+            return new GlobalRecordVm.AuthenticationVm(token);
+        } catch (BadCredentialsException ex) {
+            throw new BadRequestAlertException(AuthenticationController.MESSAGE_LOGIN_INVALID, AuthenticationController.EntityNameUser, AuthenticationController.LOGIN_INVALID);
+        }
     }
 }

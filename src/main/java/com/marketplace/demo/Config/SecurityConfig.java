@@ -1,85 +1,64 @@
 package com.marketplace.demo.Config;
 
-import com.marketplace.demo.Model.Users;
-import com.marketplace.demo.Repository.UserRepo;
-import com.marketplace.demo.Service.UserService;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import com.marketplace.demo.Security.DomainUserDetailsService;
+import com.marketplace.demo.Security.Jwt.JwtAuthFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.bind.annotation.CrossOrigin;
+
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 @Configuration
+@RequiredArgsConstructor
 @EnableWebSecurity
-@CrossOrigin
 public class SecurityConfig {
 
-    private JwtFilter jwtFilter;
-
-    public SecurityConfig(JwtFilter jwtFilter) {
-        this.jwtFilter = jwtFilter;
+    private final JwtAuthFilter jwtAuthenticationFilter;
+    private final DomainUserDetailsService domainUserDetailsService;
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(domainUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 
     @Bean
-    public UserDetailsService userDetailsService(UserRepo userRepo) {
-        return new UserService(userRepo, passwordEncoder());
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
-
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, UserRepo userRepo) throws Exception {
-        return httpSecurity
-                .cors(Customizer.withDefaults()) // Apply CORS
-                .csrf(csrf -> csrf.disable()) // Disable CSRF protection
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers( "**").permitAll()
-                        .requestMatchers("/auth/addUser", "/auth/login", "/auth/**")
-                        .permitAll()// Permit all requests to certain URLs
-                        .requestMatchers("/api/authenticate").permitAll()
-                        .anyRequest().authenticated()) // Require authentication for all other requests
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Set session management to stateless
-                .authenticationProvider(authenticationProvider(userRepo)) // Register the authentication provider
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class) // Add the JWT filter before processing the request
-                .build();
-    }
-
-
-    // Creates a DaoAuthenticationProvider to handle user authentication
-    @Bean
-    public AuthenticationProvider authenticationProvider(UserRepo userRepo) {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userDetailsService(userRepo));
-        authenticationProvider.setPasswordEncoder(passwordEncoder());
-        return authenticationProvider;
-    }
-
-
-    // Defines a PasswordEncoder bean that uses bcrypt hashing by default for password encoding
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
-
-
-    // Defines an AuthenticationManager bean to manage authentication processes
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
+                        .requestMatchers( antMatcher("/api/authenticate")).permitAll()
+                        .requestMatchers(antMatcher("/**")).permitAll()
+//                        .requestMatchers( antMatcher("/api/v1/contrat-assurance")).authenticated()
+)
+
+                .authenticationProvider(authenticationProvider())
+                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 }
