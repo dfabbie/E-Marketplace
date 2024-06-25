@@ -1,5 +1,6 @@
 package com.marketplace.demo.Service;
 
+import ch.qos.logback.classic.encoder.JsonEncoder;
 import com.marketplace.demo.Controller.AuthenticationController;
 import com.marketplace.demo.Controller.error.BadRequestAlertException;
 import com.marketplace.demo.Model.Users;
@@ -11,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,14 +28,14 @@ public class UserService {
 
     private final UserRepo userRepo;
 
-    //private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(AuthenticationManager authenticationManager, JwtService jwtService, DomainUserDetailsService domainUserDetailsService, UserRepo userRepo) {
+    public UserService(AuthenticationManager authenticationManager, JwtService jwtService, DomainUserDetailsService domainUserDetailsService, UserRepo userRepo, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.domainUserDetailsService = domainUserDetailsService;
         this.userRepo = userRepo;
-        //this.passwordEncoder = passwordEncoder;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -50,7 +52,8 @@ public class UserService {
     }
 
     public Users addUser(Users users) {
-        //users.setPassword(passwordEncoder.encode(users.getPassword()));
+
+        users.setPassword(passwordEncoder.encode(users.getPassword()));
         return userRepo.save(users);
     }
 
@@ -60,13 +63,13 @@ public class UserService {
     }
 
     public GlobalRecordVm.AuthenticationVm authenticate(GlobalRecordVm.LoginVm authenticationRequest) {
-        try {
+        //try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
             String token = jwtService.generateToken(domainUserDetailsService.loadUserByUsername(authenticationRequest.getUsername()));
             return new GlobalRecordVm.AuthenticationVm(token);
-        } catch (BadCredentialsException ex) {
-            throw new BadRequestAlertException(AuthenticationController.MESSAGE_LOGIN_INVALID, AuthenticationController.EntityNameUser, AuthenticationController.LOGIN_INVALID);
-        }
+//        } catch (BadCredentialsException ex) {
+//            throw new BadRequestAlertException(AuthenticationController.MESSAGE_LOGIN_INVALID, AuthenticationController.EntityNameUser, AuthenticationController.LOGIN_INVALID);
+//        }
     }
 }

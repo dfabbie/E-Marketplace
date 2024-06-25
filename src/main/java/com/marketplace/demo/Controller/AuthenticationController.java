@@ -25,7 +25,7 @@ import javax.validation.Valid;
 @RequestMapping("/api")
 public class AuthenticationController {
 
-    public static final String EntityNameUser = "UserJWTController";
+    public static final String EntityNameUser = "User";
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String MESSAGE_LOGIN_INVALID = "LOGIN FAILED";
     public static final String LOGIN_INVALID = "INVALID LOGIN";
@@ -47,20 +47,15 @@ public class AuthenticationController {
     }
 
     @PostMapping("/authenticate")
-    public String generateToken(@RequestBody @Valid final GlobalRecordVm.LoginVm authenticationRequest) {
-//        Authentication authentication = authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(logIn.getUsername(),logIn.getPassword()));
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-//
-//        return null;
-        try {
+    public ResponseEntity<GlobalRecordVm.AuthenticationVm> generateToken(@RequestBody @Valid final GlobalRecordVm.LoginVm authenticationRequest) {
+
             GlobalRecordVm.AuthenticationVm authenticationVm = userService.authenticate(authenticationRequest);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.add(AUTHORIZATION_HEADER, "Bearer " + authenticationVm.getAccessToken());
-            return String.valueOf(new ResponseEntity<>(authenticationVm, httpHeaders, HttpStatus.OK));
-        } catch (BadCredentialsException ex) {
-            throw new BadRequestAlertException(MESSAGE_LOGIN_INVALID, EntityNameUser, LOGIN_INVALID);
-        }
+            return new ResponseEntity<>(authenticationVm, httpHeaders, HttpStatus.OK);
+//        } catch (BadCredentialsException ex) {
+//            throw new BadRequestAlertException(MESSAGE_LOGIN_INVALID, EntityNameUser, LOGIN_INVALID);
+//        }
     }
 
 
